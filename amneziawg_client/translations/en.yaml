@@ -1,0 +1,30 @@
+---
+configuration:
+  interface:
+    name: Interface name
+    description: Name of the tunnel interface on the host. Must not exist yet.
+  address:
+    name: Tunnel addresses
+    description: Addresses of this client inside the tunnel, e.g. 10.0.0.3/32.
+  mtu:
+    name: MTU
+    description: Optional. Leave empty for the default.
+  table:
+    name: Routing table
+    description: Optional. off, auto or a table number.
+  obfuscation:
+    name: Obfuscation parameters
+    description: >-
+      One "Key = Value" per line, exactly as given by the server admin
+      (Jc, Jmin, Jmax, S1-S4, H1-H4, I1-I5 and other AmneziaWG 3.1 keys).
+  header_protection_key:
+    name: Header protection key
+    description: Optional AmneziaWG 3.1 secret. Stored as a password.
+  peer:
+    name: Server (peer)
+    description: >-
+      public_key, endpoint (host:port), allowed_ips, optional preshared_key,
+      persistent_keepalive and advanced_security.
+  restart_if_no_handshake_min:
+    name: Restart if silent (minutes)
+    description: Restart the tunnel when the server has been silent this long. 0 = off.

@@ -1,0 +1,30 @@
+---
+configuration:
+  interface:
+    name: Имя интерфейса
+    description: Имя интерфейса туннеля на хосте. Такого интерфейса ещё не должно быть.
+  address:
+    name: Адреса в туннеле
+    description: Адреса этого клиента внутри туннеля, например 10.0.0.3/32.
+  mtu:
+    name: MTU
+    description: Необязательно. Пусто — значение по умолчанию.
+  table:
+    name: Таблица маршрутов
+    description: Необязательно. off, auto или номер таблицы.
+  obfuscation:
+    name: Параметры маскировки
+    description: >-
+      По одной строке «Ключ = Значение», как выдал администратор сервера
+      (Jc, Jmin, Jmax, S1–S4, H1–H4, I1–I5 и другие ключи AmneziaWG 3.1).
+  header_protection_key:
+    name: Ключ защиты заголовков
+    description: Необязательный секрет AmneziaWG 3.1. Хранится как пароль.
+  peer:
+    name: Сервер (пир)
+    description: >-
+      public_key, endpoint (хост:порт), allowed_ips; по желанию preshared_key,
+      persistent_keepalive и advanced_security.
+  restart_if_no_handshake_min:
+    name: Перезапуск при молчании (мин)
+    description: Перезапустить туннель, если сервер молчит столько минут. 0 — выключено.

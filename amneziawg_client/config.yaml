@@ -1,0 +1,45 @@
+---
+name: AmneziaWG client
+version: "0.1.0"
+slug: amneziawg_client
+description: >-
+  Unofficial AmneziaWG 3.1 client tunnel for Home Assistant OS
+  (userspace amneziawg-go). Not affiliated with Amnezia or WireGuard.
+url: https://github.com/rz6hkh/ha-addon-amneziawg
+arch:
+  - amd64
+startup: services
+boot: auto
+host_network: true
+privileged:
+  - NET_ADMIN
+devices:
+  - /dev/net/tun
+options:
+  interface: awg0
+  address: []
+  obfuscation: []
+  peer:
+    public_key: ""
+    endpoint: ""
+    allowed_ips: []
+    persistent_keepalive: 25
+  restart_if_no_handshake_min: 0
+schema:
+  interface: match(^[a-z][a-z0-9]{0,14}$)
+  address:
+    - str
+  mtu: int(1280,1500)?
+  table: str?
+  obfuscation:
+    - str
+  header_protection_key: password?
+  peer:
+    public_key: str
+    preshared_key: password?
+    endpoint: str
+    allowed_ips:
+      - str
+    persistent_keepalive: int(0,600)
+    advanced_security: str?
+  restart_if_no_handshake_min: int(0,1440)
