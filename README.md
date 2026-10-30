@@ -13,6 +13,14 @@ address. Userspace `amneziawg-go`, no kernel module needed.
 - Base image pinned by digest: `amneziavpn/amneziawg-go:3.1.20260828`.
 - amd64 only (the official image is published for amd64).
 
+## Also in this repository: Port steer
+
+`port_steer` — source-based port redirect: chosen LAN clients' TCP ports go
+into another add-on, everyone else keeps the host port (for example one
+appliance to an add-on on 8883 while other devices stay on the MQTT broker).
+Rules follow the target add-on's container IP and are removed on stop. See
+`port_steer/DOCS.md`.
+
 ## Install
 
 Settings → Add-ons → Add-on store → ⋮ → Repositories → add

@@ -1,0 +1,29 @@
+---
+name: Port steer
+version: "0.1.0"
+slug: port_steer
+description: >-
+  Source-based port redirect: send chosen LAN clients' TCP ports into another
+  add-on, while everyone else keeps the host port (e.g. one appliance to an
+  add-on on 8883, other clients stay on the MQTT broker).
+url: https://github.com/rz6hkh/ha-addon-amneziawg
+arch:
+  - amd64
+startup: system
+boot: auto
+init: true
+host_network: true
+hassio_api: true
+privileged:
+  - NET_ADMIN
+options:
+  interval: 30
+  rules: []
+schema:
+  interval: int(10,600)
+  rules:
+    - name: match(^[a-z0-9_]{1,20}$)
+      source: str
+      port: port
+      addon: str
+      target_port: port
