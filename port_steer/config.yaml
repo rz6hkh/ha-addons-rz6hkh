@@ -6,7 +6,7 @@ description: >-
   Source-based port redirect: send chosen LAN clients' TCP ports into another
   add-on, while everyone else keeps the host port (e.g. one appliance to an
   add-on on 8883, other clients stay on the MQTT broker).
-url: https://github.com/rz6hkh/ha-addon-amneziawg
+url: https://github.com/rz6hkh/ha-addons-rz6hkh
 arch:
   - amd64
 startup: system

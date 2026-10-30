@@ -1,4 +1,14 @@
-# Home Assistant add-on: AmneziaWG client
+# rz6hkh — Home Assistant add-ons
+
+| Add-on | What it does |
+|---|---|
+| [AmneziaWG client](amneziawg_client/DOCS.md) | AmneziaWG 3.1 client tunnel for Home Assistant OS (userspace amneziawg-go) |
+| [Port steer](port_steer/DOCS.md) | Source-based port redirect: chosen LAN clients' TCP ports into another add-on |
+
+Add this repository in Home Assistant: Settings → Add-ons → Add-on store → ⋮ →
+Repositories → `https://github.com/rz6hkh/ha-addons-rz6hkh`.
+
+## AmneziaWG client
 
 Unofficial [AmneziaWG](https://docs.amnezia.org/documentation/amnezia-wg/) 3.1
 **client** tunnel for Home Assistant OS. Home Assistant dials out to your
@@ -24,7 +34,7 @@ Rules follow the target add-on's container IP and are removed on stop. See
 ## Install
 
 Settings → Add-ons → Add-on store → ⋮ → Repositories → add
-`https://github.com/rz6hkh/ha-addon-amneziawg`, then install
+`https://github.com/rz6hkh/ha-addons-rz6hkh`, then install
 **AmneziaWG client**. Documentation is in the add-on's Documentation tab
 (`amneziawg_client/DOCS.md`).
 
