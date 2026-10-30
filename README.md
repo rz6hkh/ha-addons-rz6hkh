@@ -1,49 +1,63 @@
 # rz6hkh — Home Assistant add-ons
 
-| Add-on | What it does |
-|---|---|
-| [AmneziaWG client](amneziawg_client/DOCS.md) | AmneziaWG 3.1 client tunnel for Home Assistant OS (userspace amneziawg-go) |
-| [Port steer](port_steer/DOCS.md) | Source-based port redirect: chosen LAN clients' TCP ports into another add-on |
+Unofficial add-ons for Home Assistant OS. amd64 only.
 
-Add this repository in Home Assistant: Settings → Add-ons → Add-on store → ⋮ →
-Repositories → `https://github.com/rz6hkh/ha-addons-rz6hkh`.
+| Add-on | Version | What it does |
+|---|---|---|
+| [AmneziaWG client](amneziawg_client/DOCS.md) | 0.1.0 | AmneziaWG 3.1 client tunnel (userspace amneziawg-go) |
+| [Port steer](port_steer/DOCS.md) | 0.1.0 | Source-based port redirect: chosen LAN clients' TCP ports into another add-on |
+
+## Install
+
+Settings → Add-ons → Add-on store → ⋮ → Repositories → add
+
+    https://github.com/rz6hkh/ha-addons-rz6hkh
+
+Both add-ons then appear in the store under **rz6hkh add-ons**. Each has its
+own Documentation tab (the `DOCS.md` linked above).
 
 ## AmneziaWG client
 
-Unofficial [AmneziaWG](https://docs.amnezia.org/documentation/amnezia-wg/) 3.1
-**client** tunnel for Home Assistant OS. Home Assistant dials out to your
-AmneziaWG server (for example on a VPS) and becomes reachable at its tunnel
-address. Userspace `amneziawg-go`, no kernel module needed.
+[AmneziaWG](https://docs.amnezia.org/documentation/amnezia-wg/) 3.1 **client**
+tunnel. Home Assistant dials out to your AmneziaWG server (for example on a
+VPS) and becomes reachable at its tunnel address. Userspace `amneziawg-go`, no
+kernel module needed.
 
 - Private key is generated inside the add-on and never leaves it; only the
   public key is printed to the log.
 - Secrets never appear in the log.
 - Refuses to start if the interface or a route to the tunnel networks already
-  exists on the host.
+  exists on the host — an existing tunnel is never touched.
 - Base image pinned by digest: `amneziavpn/amneziawg-go:3.1.20260828`.
-- amd64 only (the official image is published for amd64).
 
-## Also in this repository: Port steer
+## Port steer
 
-`port_steer` — source-based port redirect: chosen LAN clients' TCP ports go
-into another add-on, everyone else keeps the host port (for example one
-appliance to an add-on on 8883 while other devices stay on the MQTT broker).
-Rules follow the target add-on's container IP and are removed on stop. See
-`port_steer/DOCS.md`.
+Redirects a TCP port into another add-on **only for chosen LAN clients**;
+everyone else keeps reaching whatever owns that port on the host. Example: one
+appliance goes to an add-on on 8883 while other devices stay on the MQTT
+broker on the same port.
 
-## Install
-
-Settings → Add-ons → Add-on store → ⋮ → Repositories → add
-`https://github.com/rz6hkh/ha-addons-rz6hkh`, then install
-**AmneziaWG client**. Documentation is in the add-on's Documentation tab
-(`amneziawg_client/DOCS.md`).
+- Two `iptables` rules per entry: DNAT in `nat/PREROUTING` and ACCEPT in
+  `DOCKER-USER`.
+- The target add-on's container IP is read from the Supervisor on every pass,
+  so rules follow its restarts.
+- Rules are tagged `port_steer:<name>` and removed on stop or when the target
+  add-on is not running.
+- The target add-on does not need to publish its port on the host.
 
 ---
 
-**RU.** Неофициальный аддон-клиент AmneziaWG 3.1 для Home Assistant OS: HA сам
-подключается к вашему серверу AmneziaWG и доступен по адресу в туннеле.
-Приватный ключ создаётся внутри аддона и никуда не уходит, секреты в журнал не
-пишутся. Подробности — во вкладке «Документация» аддона.
+**RU.** Неофициальные аддоны для Home Assistant OS (amd64):
 
-Not affiliated with Amnezia or WireGuard. See `THIRD_PARTY_NOTICES.md` for
-licenses of the components pulled at build time. MIT, see `LICENSE`.
+- **AmneziaWG client** — клиент AmneziaWG 3.1: HA сам подключается к вашему
+  серверу AmneziaWG и доступен по адресу в туннеле. Приватный ключ создаётся
+  внутри аддона и никуда не уходит, секреты в журнал не пишутся.
+- **Port steer** — перенаправляет TCP-порт в другой аддон только для выбранных
+  клиентов сети; остальные по-прежнему попадают в то, что держит порт на хосте.
+
+Подключение — ссылка на репозиторий выше, подробности — во вкладке
+«Документация» каждого аддона.
+
+Not affiliated with Amnezia, WireGuard or Home Assistant. See
+`THIRD_PARTY_NOTICES.md` for licenses of the components pulled at build time.
+MIT, see `LICENSE`.
