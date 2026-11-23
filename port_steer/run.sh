@@ -7,11 +7,22 @@
 # host. The add-on IP is asked from the Supervisor on every pass, so a restart
 # of the target add-on (new container IP) is followed automatically. All rules
 # carry the comment "port_steer:<name>" and are removed on stop.
+#
+# While the target add-on is not running, the client is HELD for up to <hold>
+# seconds: its connections are refused (TCP reset) instead of falling through
+# to whatever owns <port> on the host. A client that meets a foreign service
+# during a short restart (an appliance doing TLS against the host's MQTT
+# broker) may give up for good; a refused connection is an ordinary retry.
+# While a rule is held, the Supervisor is asked every FAST seconds, so the
+# redirect is back as soon as the target is. After <hold> the rule is removed
+# and the client gets the host port again (hold: 0 = remove at once).
 set -uo pipefail
 
 OPT=/data/options.json
 TAG=port_steer
 INTERVAL=$(jq -r '.interval // 30' "$OPT")
+HOLD=$(jq -r '.hold // 300' "$OPT")
+FAST=2
 NAME_RE='^[a-z0-9_]{1,20}$'
 IP_RE='^([0-9]{1,3}\.){3}[0-9]{1,3}(/[0-9]{1,2})?$'
 
@@ -32,7 +43,7 @@ drop_rules() {
     local re="--comment \"?${TAG}:"
     [[ -n ${1:-} ]] && re="${re}${1}\"?( |$)"
     local table chain line
-    for spec in "nat PREROUTING" "filter DOCKER-USER"; do
+    for spec in "nat PREROUTING" "filter DOCKER-USER" "filter INPUT"; do
         read -r table chain <<<"$spec"
         iptables -t "$table" -S "$chain" 2>/dev/null | grep -E -- "$re" | while read -r line; do
             line=${line//\"/}   # names have no spaces, quotes can go
@@ -41,6 +52,18 @@ drop_rules() {
                 || log "WARNING: could not remove: $line"
         done
     done
+}
+
+# Refuse <src> on <port> while the target is away: RETURN in nat/PREROUTING keeps
+# the packet from Docker's own DNAT (it stays local), REJECT in INPUT answers
+# it with a TCP reset before any host listener sees it.
+hold_rules() {
+    local name=$1 src=$2 port=$3 c="${TAG}:$1"
+    drop_rules "$name"
+    iptables -t nat -I PREROUTING 1 -s "$src" -p tcp --dport "$port" -m addrtype --dst-type LOCAL \
+        -m comment --comment "$c" -j RETURN \
+        && iptables -t filter -I INPUT 1 -s "$src" -p tcp --dport "$port" \
+            -m comment --comment "$c" -j REJECT --reject-with tcp-reset
 }
 
 cleanup() {
@@ -60,10 +83,11 @@ for r in "${RULES[@]}"; do
 done
 
 drop_rules ""   # leftovers from a crash
-declare -A STATE
-log "Started: ${#RULES[@]} rule(s), check every ${INTERVAL} s"
+declare -A STATE HELD_AT
+log "Started: ${#RULES[@]} rule(s), check every ${INTERVAL} s, hold ${HOLD} s"
 
 while true; do
+    holding=0
     for r in "${RULES[@]}"; do
         name=$(jq -r .name <<<"$r"); src=$(jq -r .source <<<"$r")
         port=$(jq -r .port <<<"$r"); addon=$(jq -r .addon <<<"$r")
@@ -71,10 +95,27 @@ while true; do
         cip=$(addon_ip "$addon")
         c="${TAG}:${name}"
         if [[ -z $cip ]]; then
-            if [[ ${STATE[$name]:-} != down ]]; then
-                log "Rule $name: add-on $addon is not running - rule removed"
-                drop_rules "$name"; STATE[$name]=down
-            fi
+            # Not running: hold (refuse) for HOLD seconds, then remove. A rule
+            # never seen up (add-on started before its target) is held too.
+            case ${STATE[$name]:-} in
+                down) ;;
+                hold)
+                    if (( $(date +%s) - ${HELD_AT[$name]} >= HOLD )); then
+                        log "Rule $name: add-on $addon still not running after ${HOLD} s - rule removed"
+                        drop_rules "$name"; STATE[$name]=down
+                    else
+                        holding=1
+                    fi ;;
+                *)
+                    if (( HOLD > 0 )) && hold_rules "$name" "$src" "$port"; then
+                        log "Rule $name: add-on $addon is not running - $src refused on :$port for up to ${HOLD} s"
+                        STATE[$name]=hold; HELD_AT[$name]=$(date +%s); holding=1
+                    else
+                        (( HOLD > 0 )) && log "ERROR: rule $name could not be held"
+                        log "Rule $name: add-on $addon is not running - rule removed"
+                        drop_rules "$name"; STATE[$name]=down
+                    fi ;;
+            esac
             continue
         fi
         nat=(-t nat PREROUTING -s "$src" -p tcp --dport "$port" -m addrtype --dst-type LOCAL
@@ -91,6 +132,6 @@ while true; do
             STATE[$name]=up
         fi
     done
-    sleep "$INTERVAL" &
+    sleep "$( (( holding )) && echo "$FAST" || echo "$INTERVAL")" &
     wait $! || true
 done
